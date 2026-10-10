@@ -1,7 +1,7 @@
-LINK4BRICK v1.0.0 — TrimUI Brick Hammer / StockUI
+LINK4BRICK v1.0.1 — TrimUI Brick Hammer / StockUI
 
 INSTALL OR UPDATE VIA TERMINAL
-Download LINK4BRICK-StockUI-v1.0.0.zip and install_link4brick.py into one folder.
+Download LINK4BRICK-StockUI-v1.0.1.zip and install_link4brick.py into one folder.
 Close the game, shut down the Brick, and connect its SD card to your computer.
 Run (adjust the paths if needed):
 
@@ -30,6 +30,8 @@ Brick START queues playback to the next four-beat Link “one.”
 FMS Clock: match FMS SYNC IN / CLOCK and PPQ 1,2,3,4,6,8.
 STEPPER: match its LINK IN mode and PPQ 4,6,12,24,48,96.
 Set Link audio OFF for clock-only operation with the Brick speaker.
+This uses a dedicated Link clock process, with no PCM capture FIFO or relay.
+The emulator and local speaker conversion remain active.
 Change settings only with the game closed. Audio buffer is fixed at 65 ms.
 Use Push's incoming-audio synchronization/compensation for transport delay.
 Game Boy clock and general multiplayer Game Link are not supported.

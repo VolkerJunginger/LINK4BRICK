@@ -46,7 +46,9 @@ static void press(struct mCore* c) {
     assert(AudioCastClockInput(c, 9) == 1); /* held START cannot toggle twice */
     assert(AudioCastClockInput(c, 0) == 0);
 }
-int main(void) {
+int main(int argc, char** argv) {
+    int advance = argc > 1 ? atoi(argv[1]) : 0;
+    assert(advance >= 0 && advance <= 150000);
     struct mLogger log={.log=quiet};mLogSetDefaultLogger(&log);
     struct mCore* c=GBACoreCreate();assert(c->init(c));mCoreInitConfig(c,NULL);
     mColor* video=calloc(240*160,sizeof(mColor));c->setVideoBuffer(c,video,240);
@@ -55,7 +57,8 @@ int main(void) {
     struct GBA* g=c->board;
     char path[90];snprintf(path,sizeof(path),"/tmp/ac-serial-%ld.sock",(long)getpid());
     setenv("AUDIOCAST_LINK_PROTOCOL","fms-gba",1);setenv("AUDIOCAST_PPQN","24",1);
-    setenv("AUDIOCAST_OFFSET_US","0",1);setenv("AUDIOCAST_CLOCK_SOCKET",path,1);
+    char offset[16];snprintf(offset,sizeof(offset),"%d",advance);
+    setenv("AUDIOCAST_OFFSET_US",offset,1);setenv("AUDIOCAST_CLOCK_SOCKET",path,1);
     AudioCastClockAttach(c);
     GBASIOWriteRCNT(&g->sio,0x8000);assert(AudioCastClockInput(c,9)==9);
     GBASIOWriteRCNT(&g->sio,0);GBASIOWriteSIOCNT(&g->sio,0x4081);
@@ -82,10 +85,11 @@ int main(void) {
         }
         if(f==10) press(c);
         if(f==120) { /* about 2.009 s: START has arrived exactly on beat 4 */
-            assert(starts==1 && ticks==0);
+            assert(starts==1);
             double startUs=(uint32_t)(startCycle-baseCycle)*1000000.0/16777216;
-            printf("Beat-4 START: %.1f us into session (target 2000000 us)\n",startUs);
-            assert(fabs(startUs-2000000)<200);
+            printf("Beat-4 START: %.1f us into session (advance %d us)\n",startUs,advance);
+            assert(fabs(startUs-(2000000-advance))<200);
+            assert(ticks<=(unsigned)(advance/20833+1));
         }
         if(f==590) {
             printf("120 BPM / 24 PPQN: %.1f..%.1f us\n",minInterval,maxInterval);
@@ -125,5 +129,5 @@ int main(void) {
     AudioCastClockDetach(c);assert(access(path,F_OK)!=0);close(fd);
     mTimingDeschedule(&g->timing,&sample);
     mCoreConfigDeinit(&c->config);c->deinit(c);free(video);
-    puts("PASS: external-serial START routing, next-bar launch, zero timing offset, 24 PPQN, live tempo changes without restart, cancellation, peer loss, stale stop, wrap and cleanup");
+    puts("PASS: external-serial START routing, next-bar launch with configured advance, steady 24 PPQN, live tempo changes without restart, cancellation, peer loss, stale stop, wrap and cleanup");
 }

@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstdint>
+#include <cstring>
 #include <chrono>
 static volatile sig_atomic_t interrupted=0;
 static void stop(int n) { interrupted=n; }
@@ -24,10 +25,46 @@ static void finish(pid_t pid) {
   // Also stop any children left behind by a launcher that has already exited.
   kill(-pid, SIGKILL);
 }
+// A clock-only session owns the same process groups as the streaming session,
+// but has no PCM FIFO, pipe or relay. A failed clock leaves the speaker running.
+static int clockOnly(char** argv) {
+  const pid_t clock = fork();
+  if (clock == 0) {
+    setpgid(0, 0);
+    const int input = open("/dev/null", O_RDONLY);
+    if (input < 0 || dup2(input, STDIN_FILENO) < 0) _exit(127);
+    if (input != STDIN_FILENO) close(input);
+    unsetenv("ALSA_CONFIG_PATH");
+    execl(argv[1], argv[1], static_cast<char*>(nullptr));
+    _exit(127);
+  }
+  if (clock < 0) return 2;
+  setpgid(clock, clock);
+  const pid_t game = fork();
+  if (game == 0) {
+    setpgid(0, 0);
+    signal(SIGPIPE, SIG_DFL);
+    execv(argv[3], argv + 3);
+    _exit(127);
+  }
+  if (game < 0) { finish(clock); waitpid(clock, nullptr, 0); return 2; }
+  setpgid(game, game);
+  while (!interrupted && !exited(game)) {
+    if (poll(nullptr, 0, 25) < 0 && errno != EINTR) break;
+  }
+  finish(game);
+  int status = 0;
+  while (waitpid(game, &status, 0) < 0 && errno == EINTR) {}
+  finish(clock);
+  while (waitpid(clock, nullptr, 0) < 0 && errno == EINTR) {}
+  if (interrupted) return 128 + interrupted;
+  return WIFEXITED(status) ? WEXITSTATUS(status) : 128 + WTERMSIG(status);
+}
 int main(int argc, char** argv) {
-  if (argc<4) { std::fprintf(stderr,"usage: session SENDER FIFO COMMAND [ARGS...]\n"); return 2; }
+  if (argc<4) { std::fprintf(stderr,"usage: session SENDER FIFO|--clock-only COMMAND [ARGS...]\n"); return 2; }
   setvbuf(stdout,nullptr,_IOLBF,0);
   signal(SIGTERM,stop); signal(SIGINT,stop); signal(SIGHUP,stop); signal(SIGPIPE,SIG_IGN);
+  if (std::strcmp(argv[2], "--clock-only") == 0) return clockOnly(argv);
   struct stat st{};
   if (lstat(argv[2],&st) || !S_ISFIFO(st.st_mode)) { std::fprintf(stderr,"Not a FIFO\n"); return 2; }
   int fifo=open(argv[2],O_RDWR|O_NONBLOCK|O_CLOEXEC|O_NOFOLLOW);

@@ -7,7 +7,7 @@ parser.add_argument('--build',type=Path,required=True);parser.add_argument('--co
 parser.add_argument('--link',type=Path,required=True);parser.add_argument('--output',type=Path,required=True)
 parser.add_argument('--host',action='store_true',help='Layout test only; not installable on Brick')
 args=parser.parse_args();ROOT=Path(__file__).resolve().parent.parent
-bins=['linkaudio-send','audiocast-session','alsa-probe','audiocast-cksum','audiocast-core-probe','audiocast-settings']
+bins=['linkaudio-send','linkclock-send','audiocast-session','alsa-probe','audiocast-cksum','audiocast-core-probe','audiocast-settings']
 def arm64(p):
   header=p.read_bytes()[:64]
   assert header[:6]==b'\x7fELF\x02\x01' and struct.unpack_from('<H',header,18)[0]==183,p
@@ -25,7 +25,7 @@ with tempfile.TemporaryDirectory() as t:
   for p in app.rglob('*.sh'):p.chmod(0o755);subprocess.run(['sh','-n',str(p)],check=True)
   shutil.copyfile(ROOT/'INSTALL.txt',stage/'README.txt')
   shutil.copyfile(ROOT/'tools/install.py',stage/'install_link4brick.py')
-  manifest={'product':'LINK4BRICK','version':'1.0.0','installable':not args.host,'files':{str(p.relative_to(app)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(app.rglob('*')) if p.is_file()}}
+  manifest={'product':'LINK4BRICK','version':'1.0.1','installable':not args.host,'files':{str(p.relative_to(app)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(app.rglob('*')) if p.is_file()}}
   (app/'release.json').write_text(json.dumps(manifest,indent=2)+'\n')
   shutil.copyfile(ROOT/'THIRD_PARTY.md',stage/'THIRD_PARTY.txt');(stage/'LICENSES').mkdir()
   for p in [ROOT/'LICENSE',ROOT/'LICENSES/mGBA-MPL-2.0.txt',ROOT/'LICENSES/mGBA-inih.txt',ROOT/'LICENSES/Ableton-Link.md',ROOT/'LICENSES/Inter-OFL.txt']:

@@ -15,7 +15,7 @@ import os,sys,json
 from pathlib import Path
 record=Path(os.environ['CAPTURE'])
 calls=json.loads(record.read_text()) if record.exists() else []
-calls.append({'args':sys.argv[1:],'clock':os.environ.get('AUDIOCAST_CLOCK_SOCKET'),'protocol':os.environ.get('AUDIOCAST_LINK_PROTOCOL'),'config':Path(sys.argv[sys.argv.index('--appendconfig')+1]).read_text()})
+calls.append({'args':sys.argv[1:],'clock':os.environ.get('AUDIOCAST_CLOCK_SOCKET'),'protocol':os.environ.get('AUDIOCAST_LINK_PROTOCOL'),'advance':os.environ.get('AUDIOCAST_OFFSET_US'),'config':Path(sys.argv[sys.argv.index('--appendconfig')+1]).read_text()})
 record.write_text(json.dumps(calls))
 core=sys.argv[sys.argv.index('-L')+1]
 if core.endswith('mgba-link_libretro.so'):
@@ -41,6 +41,13 @@ if core.endswith('mgba-link_libretro.so'):
     assert len(calls)==1 and calls[0]['args'][-3:]==['-L',str(app/'cores/mgba-link_libretro.so'),'Unrelated music program.gba']
     assert 'video_threaded = "false"' in calls[0]['config'] and 'libretro_log_level = "2"' in calls[0]['config']
     assert calls[0]['clock']==str(runtime/'clock.sock') and calls[0]['protocol']=='fms-gba'
+    for audio in ['on','off']:
+        (app/'settings.txt').write_text(f'LINK_AUDIO={audio}\n')
+        for protocol,ppq in [('fms-gba',24),('fms-clock',2),('stepper-gba',48)]:
+            for advance in [0,5,60,65,150]:
+                calls=run(f'PROTOCOL={protocol}\nPPQN={ppq}\nOFFSET_US={advance*1000}\n',SIM_READY='1')
+                assert len(calls)==1 and calls[0]['advance']==str(advance*1000)
+                assert 'audio_latency = "65"' in calls[0]['config']
     for rate in [1,2,3,4,6,8]:
         calls=run(f'PROTOCOL=fms-clock\nPPQN={rate}\nOFFSET_US=0\n',SIM_READY='1')
         assert len(calls)==1 and calls[0]['protocol']=='fms-clock'

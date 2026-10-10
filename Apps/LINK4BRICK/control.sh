@@ -98,7 +98,7 @@ case "${1:-toggle}" in
   *) echo "usage: control.sh [on|off|toggle|refresh-icon]"; exit 2 ;;
 esac
 check_helper || exit 1
-for binary in linkaudio-send audiocast-session alsa-probe; do
+for binary in linkaudio-send linkclock-send audiocast-session alsa-probe; do
   [ -x "$APP/bin/$binary" ] || { echo "Missing binary: $binary"; exit 1; }
 done
 [ -x "$SD/RetroArch/ra64.trimui" ] || { echo "StockUI RetroArch missing"; exit 1; }

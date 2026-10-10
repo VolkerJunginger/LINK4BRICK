@@ -42,7 +42,7 @@ def setup(tmp, build=None):
         helper.write_text('#!/bin/sh\n[ "$1" != --self-test ] || exit 0\n'
                           'exec /usr/bin/cksum <"$1"\n')
     helper.chmod(0o755)
-    for name in ["linkaudio-send", "audiocast-session", "alsa-probe"]:
+    for name in ["linkaudio-send", "linkclock-send", "audiocast-session", "alsa-probe"]:
         p = app / "bin" / name
         p.write_text("#!/bin/sh\nexit 0\n")
         p.chmod(0o755)

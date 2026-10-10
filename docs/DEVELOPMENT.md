@@ -30,13 +30,13 @@ cmake --build mgba-build -j2
 Use the cross-compiler arguments from the workflow for installable ARM64 binaries. Host builds are for automated tests only. Package with:
 
 ```sh
-python3 tools/package_virtual_cable.py --build build --core mgba-build/mgba_libretro.so --link link --output dist/LINK4BRICK-StockUI-v1.0.0.zip
-python3 tools/verify.py --package dist/LINK4BRICK-StockUI-v1.0.0.zip
+python3 tools/package_virtual_cable.py --build build --core mgba-build/mgba_libretro.so --link link --output dist/LINK4BRICK-StockUI-v1.0.1.zip
+python3 tools/verify.py --package dist/LINK4BRICK-StockUI-v1.0.1.zip
 ```
 
 ## Verification and release scope
 
-Checks exercise real ALSA/FIFO routing, sender stalls/exits, child cleanup, launcher checksum failures/restoration, clock-only settings, live Link tempo changes, fixed-rate PCM, FMS serial START and STEPPER interrupts. ARM64 menu/core execution is checked with QEMU. Installer tests cover fresh installation, updates, exact undo, interrupted writes, symlinks, corruption and unrelated-file preservation.
+Checks exercise real ALSA/FIFO routing, sender stalls/exits, child cleanup, launcher checksum failures/restoration, clock-only settings, live Link tempo changes without PCM input, direct ALSA speaker playback without a FIFO, clock-only process cleanup, fixed-rate PCM, FMS serial START and STEPPER interrupts. ARM64 menu/core execution is checked with QEMU. Installer tests cover fresh installation, updates, exact undo, interrupted writes, symlinks, corruption and unrelated-file preservation.
 
 Retired standalone FMS launch/probe apps and private-ROM test tooling are absent from the stable release source. The successful sender/core implementation and regression coverage are preserved. Some historical protocol helpers remain internally for compatibility; they are not offered as supported settings. Internal `audiocast-*` binaries, environment keys and launcher backup names are retained to avoid breaking recovery. Product and app folder names are LINK4BRICK.
 

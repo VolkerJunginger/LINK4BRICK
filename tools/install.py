@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install LINK4BRICK v1.0.0 on a StockUI card, with a local undo journal."""
+"""Install LINK4BRICK v1.0.1 on a StockUI card, with a local undo journal."""
 import argparse
 import datetime
 import hashlib
@@ -12,12 +12,12 @@ import tempfile
 import uuid
 import zipfile
 
-VERSION = '1.0.0'
+VERSION = '1.0.1'
 APP = 'Apps/LINK4BRICK/'
 MUTABLE = {'enabled', 'launchers.list', 'settings.txt', 'cable/config.txt', 'icon.png'}
 RETIRED = ['cable/log.sh', 'cable/status.sh', 'cable/session-output.sh',
            'cable/show-launch-error.sh']
-BINS = ['linkaudio-send', 'audiocast-session', 'alsa-probe', 'audiocast-cksum',
+BINS = ['linkaudio-send','linkclock-send', 'audiocast-session', 'alsa-probe', 'audiocast-cksum',
         'audiocast-core-probe', 'audiocast-settings']
 
 
@@ -230,7 +230,7 @@ def main():
     if args.undo:
         undo(args.undo.expanduser().resolve(), card)
         return
-    package = args.package or Path(__file__).resolve().parent / 'LINK4BRICK-StockUI-v1.0.0.zip'
+    package = args.package or Path(__file__).resolve().parent / 'LINK4BRICK-StockUI-v1.0.1.zip'
     files = load_package(package)
     changes = changes_for(card, files)
     if args.check:

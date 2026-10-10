@@ -36,8 +36,11 @@ Other firmware and Game Boy sync are not supported by this release.
 | Link audio | ON streams to Push; OFF keeps speaker audio and clock sync |
 | Sync mode | Off, FMS GBA, FMS Clock, STEPPER |
 | PPQ | FMS GBA: 24; FMS Clock: 1, 2, 3, 4, 6, 8; STEPPER: 4, 6, 12, 24, 48, 96 |
+| Sync advance | 0–150 ms, in 5 ms steps; starts and keeps the sequence this much earlier than Link |
 
-Start with **FMS GBA / 24 PPQ** and set FMS to **SYNC IN / GBA**. Press START on the Brick to queue the next “one.” Match the program's sync input and PPQ when using FMS Clock or STEPPER. Change settings with the game closed.
+Start with **FMS GBA / 24 PPQ** and set FMS to **SYNC IN / GBA**. Press START on the Brick to queue the next “one.” Match the program's sync input and PPQ when using FMS Clock or STEPPER. Change settings with the game closed. With Link Audio OFF, a dedicated Link clock process follows tempo and phase while sound goes directly to the speaker. No audio channel, PCM FIFO or relay is created. FMS emulation and speaker conversion still run, so the CPU saving depends on the song.
+
+**Sync advance** defaults to 0 ms. If the Brick speaker sounds consistently late, try 65 ms and adjust in 5 ms steps: increase it to play earlier, decrease it if the Brick sounds early. This shifts the local virtual cable clock; it does not change Link tempo or the fixed 65 ms audio buffer. It applies with Link audio ON or OFF. Avoid compensating the same delay again on Push. With advance enabled, press START before the advanced boundary; a press too close to the “one” queues the following bar.
 
 ## Reversible by design
 

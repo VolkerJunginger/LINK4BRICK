@@ -19,7 +19,9 @@ The sender follows the live Ableton Link timeline. It does not periodically latc
 
 The emulator places cable events on its cycle timeline and preserves audio production separately. The audio path converts to fixed 48 kHz stereo PCM, maintains bounded recovery and uses a 65 ms RetroArch buffer. The buffer is fixed because this setting worked well in hardware testing.
 
-Incoming audio still has transport latency. Compensate it on Push; LINK4BRICK does not add delay compensation. Link's tempo/phase sync and Link Audio transport are separate: turning Link audio OFF keeps the virtual clock and local speaker available.
+The **Sync advance** setting moves the entire local virtual cable clock earlier by 0–150 ms, in 5 ms steps. Zero preserves the existing timing; a positive value advances both the queued START and all later pulses while retaining their spacing and live tempo response. Start with 65 ms for a consistently late Brick speaker, then tune by ear. The configured buffer is a capacity, not a measurement of actual audible latency, so 65 ms is a starting point rather than a guaranteed correction. Settings persist across audio, mode and PPQ changes and apply to the next game. Press START before the advanced bar boundary; otherwise playback queues the following bar.
+
+Sync advance does not modify the shared Link timeline, add or remove audio buffering, or fix occasional emulator stalls. It applies with Link audio ON or OFF, and changes local speaker timing too. Incoming streamed audio has additional transport latency; account for that on Push without compensating the same delay twice. Link's tempo/phase sync and Link Audio transport are separate: turning Link audio OFF keeps the virtual clock and local speaker available through a dedicated clock process. It uses the streaming client's Link implementation with audio sharing disabled and no audio sink. Its timer follows the live timeline independently of audio production. PCM goes directly to the speaker; no capture FIFO or relay is used. The private core's fixed-rate speaker conversion remains active to preserve stable playback.
 
 ## What changes while enabled
 

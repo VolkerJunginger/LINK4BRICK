@@ -14,7 +14,16 @@ fallback() {
   exec /bin/sh "$ORIGINAL" "$@"
 }
 [ -f "$AC_APP/enabled" ] || fallback "$@"
-for binary in linkaudio-send audiocast-session alsa-probe; do
+AUDIOCAST_LINK_AUDIO=1
+if [ -r "$AC_APP/settings.sh" ]; then
+  ac_link_audio=$(/bin/sh "$AC_APP/settings.sh" audio-value)
+  case "$ac_link_audio" in 0|1) AUDIOCAST_LINK_AUDIO="$ac_link_audio";; esac
+  unset ac_link_audio
+fi
+export AUDIOCAST_LINK_AUDIO
+SENDER=linkaudio-send
+[ "$AUDIOCAST_LINK_AUDIO" != 0 ] || SENDER=linkclock-send
+for binary in "$SENDER" audiocast-session alsa-probe; do
   [ -x "$AC_APP/bin/$binary" ] || fallback "$@"
 done
 [ -r "$AC_SD/RetroArch/retroarch.cfg" ] || fallback "$@"
@@ -37,18 +46,24 @@ trap 'exit 130' INT
 trap 'exit 143' TERM HUP
 echo "=== AudioCast v0.2b game session: $SCRIPT ==="
 date
-mkfifo "$FIFO" || exit 1
-OWN_FIFO=1
+AC_PLAYBACK=ac_speaker
+AC_TEE=
+if [ "$AUDIOCAST_LINK_AUDIO" = 1 ]; then
+  mkfifo "$FIFO" || exit 1
+  OWN_FIFO=1
+  AC_PLAYBACK=ac_tee
+  AC_TEE="pcm.ac_tee { type file slave.pcm \"ac_speaker\" file \"$FIFO\" format \"raw\" }"
+fi
 # Standalone process-private config, as in v0.2a. Loading the system config
 # could run late hooks that restore the firmware default over our route.
 cat >"$AC_RUN/alsa.conf" <<EOF
 pcm.ac_speaker { type hw card "audiocodec" device 0 }
 pcm.ac_capture { type hw card "audiocodec" device 0 }
 ctl.!default { type hw card "audiocodec" }
-pcm.ac_tee { type file slave.pcm "ac_speaker" file "$FIFO" format "raw" }
+$AC_TEE
 pcm.ac_game {
   type plug
-  slave { pcm "ac_tee" format S16_LE rate 48000 channels 2 }
+  slave { pcm "$AC_PLAYBACK" format S16_LE rate 48000 channels 2 }
 }
 pcm.!default { type asym playback.pcm "ac_game" capture.pcm "ac_capture" }
 EOF
@@ -68,15 +83,11 @@ AUDIOCAST_AUDIO_RECOVERY=1
 unset AUDIOCAST_CLOCK_REFRESH_MS AUDIOCAST_CLOCK_MODE
 export AUDIOCAST_AUDIO_RECOVERY
 if [ -r "$AC_APP/cable/env.sh" ]; then . "$AC_APP/cable/env.sh"; fi
-AUDIOCAST_LINK_AUDIO=1
-if [ -r "$AC_APP/settings.sh" ]; then
-  ac_link_audio=$(/bin/sh "$AC_APP/settings.sh" audio-value)
-  case "$ac_link_audio" in 0|1) AUDIOCAST_LINK_AUDIO="$ac_link_audio";; esac
-  unset ac_link_audio
-fi
-export AUDIOCAST_LINK_AUDIO
+
 # The child preflight sets ALSA_CONFIG_PATH only after the route opens cleanly.
-"$AC_APP/bin/audiocast-session" "$AC_APP/bin/linkaudio-send" "$FIFO" \
+SESSION_INPUT="$FIFO"
+[ "$AUDIOCAST_LINK_AUDIO" != 0 ] || SESSION_INPUT=--clock-only
+"$AC_APP/bin/audiocast-session" "$AC_APP/bin/$SENDER" "$SESSION_INPUT" \
   /bin/sh "$AC_APP/start-game.sh" "$SCRIPT" "$@" &
 SESSION=$!
 wait "$SESSION"

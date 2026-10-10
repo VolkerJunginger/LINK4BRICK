@@ -1,5 +1,6 @@
 // Real receive-side integration test. No device firmware, ROM or BIOS needed.
 #include <ableton/LinkAudio.hpp>
+#include "../sync/clock.h"
 #include <atomic>
 #include <chrono>
 #include <thread>
@@ -16,6 +17,12 @@ int main(int argc,char** argv) {
     for(int i=0;i<240;i++) {
       for(const auto& channel:link.channels())if(channel.name=="Brick Out")return 4;
       if(i==60 || i==140) { auto state=link.captureAppSessionState();state.setTempo(i==60?90:150,link.clock().micros());link.commitAppSessionState(state); }
+      if(i%10==0 && link.numPeers()) {
+        const auto state=link.captureAppSessionState();
+        const auto now=link.clock().micros();
+        std::printf("PHASE %lld %.9f %.3f\n",(long long)ac_monotonic_us(),
+          state.beatAtTime(now,4.0),state.tempo());
+      }
       std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
     std::puts("PASS: clock-only peer never advertised Brick Out");return 0;
